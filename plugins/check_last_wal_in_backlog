@@ -1,0 +1,38 @@
+#!/bin/sh
+
+prod_user=$1
+failover_user=$2
+
+if [ -z $prod_user ] || [ -z $failover_user ]; then
+    echo "usage $0 prod_user failover_user"
+    exit 1
+fi
+
+check_if_prod_user_exist=`/bin/grep -q "^${prod_user}:" /etc/passwd`
+if [ $? -ne 0 ]; then
+    echo "Production wal user $prod_user does not exist"
+    exit 1
+fi
+
+check_if_failover_user_exist=`/bin/grep -q "^${failover_user}:" /etc/passwd`
+if [ $? -ne 0 ]; then
+    echo "Production wal user $failover_user does not exist"
+    exit 1
+fi
+
+MAXAGE=7200
+last_wal_in_backlog=`find /var/spool/postgresql/backlog/$prod_user/ /var/spool/postgresql/backlog/$failover_user/ -type f -exec ls -1rt "{}" + | tail -1`
+
+if [ ! -f $last_wal_in_backlog ]; then
+    echo "$last_wal_in_backlog wal file not found in backlog"
+    exit 2
+fi
+
+# file age in seconds = current_time - file_modification_time.
+FILEAGE=$(($(date +%s) - $(stat -c '%Y' "$last_wal_in_backlog")))
+test $FILEAGE -lt $MAXAGE && {
+    echo "$last_wal_in_backlog is less than $MAXAGE seconds old."
+    exit 0
+}
+echo "$last_wal_in_backlog is older than $MAXAGE seconds."
+exit 2
