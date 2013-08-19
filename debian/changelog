@@ -1,3 +1,10 @@
+nagios-plugins-mendix (0.1.2-1) unstable; urgency=low
+
+  * plugins: add check_appcontainer_locks from cloud repo
+  * plugins/check_appcontainer_locks: add maxdepth 1 to only find locks in ~
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Mon, 19 Aug 2013 16:52:56 +0200
+
 nagios-plugins-mendix (0.1.1-1) unstable; urgency=low
 
   * plugins/checkmxruntime_*: add path to /usr/share/m2ee-tools
