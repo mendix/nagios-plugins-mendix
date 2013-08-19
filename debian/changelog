@@ -1,3 +1,9 @@
+nagios-plugins-mendix (0.1.1-1) unstable; urgency=low
+
+  * plugins/checkmxruntime_*: add path to /usr/share/m2ee-tools
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Mon, 19 Aug 2013 14:38:36 +0200
+
 nagios-plugins-mendix (0.1-1) unstable; urgency=low
 
   * Initial release.
