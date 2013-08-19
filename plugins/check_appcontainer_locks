@@ -1,0 +1,14 @@
+#!/bin/bash
+RET=0
+[ ! -d "$HOME" ] && echo "UNKNOWN: $HOME is not a directory" && exit 3
+
+for lock in `find $HOME -name "*.lock"`;
+do
+    if [ $(( `date +%s` - `stat -L --format %Y $lock` )) -gt 3600 ];
+    then
+        stat -c 'STALE: %z %n' $lock;
+        RET=1
+    fi
+done
+[ $RET -eq 0 ] && echo "OK"
+exit $RET
