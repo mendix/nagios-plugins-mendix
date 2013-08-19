@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-import m2ee as m2ee_api
 import sys
+sys.path.insert(1, '/usr/share/m2ee-tools')
+
+import m2ee as m2ee_api
 import logging
 
 logger = logging.getLogger("m2ee")
