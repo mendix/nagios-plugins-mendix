@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 RET=0
 [ ! -d "$HOME" ] && echo "UNKNOWN: $HOME is not a directory" && exit 3
 
-for lock in `find $HOME -name "*.lock"`;
+for lock in $(find $HOME -maxdepth 1 -name "*.lock");
 do
     if [ $(( `date +%s` - `stat -L --format %Y $lock` )) -gt 3600 ];
     then
