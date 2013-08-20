@@ -1,0 +1,13 @@
+#!/bin/sh
+cd /etc
+git diff --quiet --shortstat --exit-code
+result=$?
+if [ $result != 0 ]; then
+    echo >&2 "You have uncommitted changed files."
+    exit $result
+fi
+
+if [ -n "$(git ls-files --others --exclude-standard)" ]; then
+    echo >&2 "You have untracked files."
+    exit 1
+fi
