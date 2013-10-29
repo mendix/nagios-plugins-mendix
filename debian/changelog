@@ -1,3 +1,9 @@
+nagios-plugins-mendix (0.1.5-1) unstable; urgency=low
+
+  * mv check_webserver.sh check_webserver
+
+ -- Jouke Waleson <jouke.waleson@mendix.com>  Tue, 29 Oct 2013 14:32:40 +0100
+
 nagios-plugins-mendix (0.1.4-1) unstable; urgency=low
 
   * add check_webserver.py
