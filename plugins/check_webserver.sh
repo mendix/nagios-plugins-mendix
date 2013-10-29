@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# This script check if http returns 301 to the
+# https location and the https location returns
+# a 200.
+#
+# Example curl
+#  HTTP/1.1 301 Moved Permanently
+#  Server: nginx/1.0.5
+#  Date: Tue, 04 Sep 2012 14:06:05 GMT
+#  Content-Type: text/html
+#  Content-Length: 184
+#  Connection: keep-alive
+#  Location: https://example.mendix.com/
+#  HTTP/1.1 200 OK
+#  Server: nginx/1.0.5
+#  Date: Tue, 04 Sep 2012 14:06:05 GMT
+#  Content-Type: text/html
+#  Content-Length: 867
+#  Last-Modified: Thu, 23 Aug 2012 15:56:06 GMT
+#  Connection: keep-alive
+#  Accept-Ranges: bytes
+
+url=$1
+
+function print_usage()
+{
+    echo `basename $0` example.mendix.com
+}
+
+if [ -z $url ]; then
+    print_usage
+    exit 3 # UNKNOWN
+fi
+
+hostcheck=`host ${url}` # Minimal input sanitize check
+if [ $? -ne 0 ]; then
+    echo "${url} does not exist";
+    exit 3; # UNKNOWN
+fi
+
+IFS=$'\n' # Internal Field Separator: only newline, no tab or space
+# -s Silent or quiet mode. Don't show progress meter or error messages.
+# -I Fetch the HTTP-header only.
+# -L If the server reports 301, follow this 301 to the new location.
+curl=`/usr/bin/curl -s -I -L http://$url | sed 's/\r$//'` # Curl return newlines with \r, so remove this.
+
+i=0
+location=0
+
+for httpheader in $curl
+do
+    let i++
+
+    if [ $location -eq 1 ]; then # 301 received already https should return 200.
+        if [ $httpheader = "HTTP/1.1 200 OK" ]; then
+            echo "HTTP return code is 301 and HTTPS return code is 200"
+            exit 0
+        fi
+    fi
+
+    if [ $i -eq 1 ]; then
+        if [ "$httpheader" = "HTTP/1.1 301 Moved Permanently" ]; then # The first HTTP header.
+            continue
+        else
+            echo "HTTP return code is not 301 but '$httpheader'."
+            exit 1
+        fi
+    fi
+
+    if [ "$httpheader" = "Location: https://$url/" ]; then # Received a 301, follow this.
+        location=1
+        continue
+    fi
+done
+echo "Did not find correct headers for url '$url'"
+exit 1
