@@ -8,14 +8,12 @@ if [ -z $prod_user ] || [ -z $failover_user ]; then
     exit 1
 fi
 
-check_if_prod_user_exist=`/bin/grep -q "^${prod_user}:" /etc/passwd`
-if [ $? -ne 0 ]; then
+if ! id -u $prod_user >/dev/null 2>&1; then
     echo "Production wal user $prod_user does not exist"
     exit 1
 fi
 
-check_if_failover_user_exist=`/bin/grep -q "^${failover_user}:" /etc/passwd`
-if [ $? -ne 0 ]; then
+if ! id -u $failover_user >/dev/null 2>&1; then
     echo "Production wal user $failover_user does not exist"
     exit 1
 fi
