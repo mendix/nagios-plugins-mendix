@@ -1,3 +1,13 @@
+nagios-plugins-mendix (0.1.6-1) unstable; urgency=low
+
+  * plugins/check_last_wal_in_backlog: use id for checking user existence
+  * plugin: add check_stuck_wal_in_incoming
+  * rm debian folder
+  * Revert "rm debian folder"
+  * debian: update gbp.conf
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Mon, 18 Nov 2013 16:57:10 +0100
+
 nagios-plugins-mendix (0.1.5-1) unstable; urgency=low
 
   * mv check_webserver.sh check_webserver
