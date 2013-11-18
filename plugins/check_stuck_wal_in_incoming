@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ ! -d /var/spool/postgresql/incoming ]; then
+	echo "/var/spool/postgresql/incoming doesn't exist"
+	exit 3
+fi
+
+result=$(find /var/spool/postgresql/incoming -type f -mmin +15 | wc -l)
+
+if [ "$result" != "0" ]; then
+	echo "CRITICAL: ${result} file(s) found in incoming folders older than 15min."
+	exit 2
+fi
+
+echo "OK: No files older than 15min in incoming folders."
+exit 0
