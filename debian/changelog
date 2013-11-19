@@ -1,3 +1,9 @@
+nagios-plugins-mendix (0.1.7-1) unstable; urgency=low
+
+  * plugins: add plugin to check xas-fo to be in sync with xas-prod
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Tue, 19 Nov 2013 11:54:11 +0100
+
 nagios-plugins-mendix (0.1.6-1) unstable; urgency=low
 
   * plugins/check_last_wal_in_backlog: use id for checking user existence
