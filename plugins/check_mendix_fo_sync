@@ -1,0 +1,17 @@
+#!/bin/sh
+FILE=/var/run/mendix-fo-sync.last
+MAXAGE=1800
+
+if [ ! -f $FILE ]; then
+	echo "UNKNOWN: $FILE is missing"
+	exit 3
+fi
+
+# file age in seconds = current_time - file_modification_time.
+FILEAGE=$(($(date +%s) - $(stat -c '%Y' "$FILE")))
+test $FILEAGE -lt $MAXAGE && {
+    echo "OK: Failover environment is up-to-date"
+    exit 0
+}
+echo "CRITICAL: Failover environment hasn't been synced for $FILEAGE seconds."
+exit 2
