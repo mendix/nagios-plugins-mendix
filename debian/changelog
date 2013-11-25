@@ -1,3 +1,9 @@
+nagios-plugins-mendix (0.1.8-1) raring; urgency=low
+
+  * check_webserver: nginx now returns a 503 for apps that are down
+
+ -- Jouke Waleson <jouke.waleson@mendix.com>  Mon, 25 Nov 2013 20:03:43 +0100
+
 nagios-plugins-mendix (0.1.7-1) unstable; urgency=low
 
   * plugins: add plugin to check xas-fo to be in sync with xas-prod
