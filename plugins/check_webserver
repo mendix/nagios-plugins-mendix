@@ -56,6 +56,9 @@ do
         if [ $httpheader = "HTTP/1.1 200 OK" ]; then
             echo "HTTP return code is 301 and HTTPS return code is 200"
             exit 0
+        elif [ $httpheader = "HTTP/1.1 503 Service Temporarily Unavailable" ] ; then
+            echo "HTTP return code is 301 and HTTPS return code is 503 because the application is offline"
+            exit 0
         fi
     fi
 
