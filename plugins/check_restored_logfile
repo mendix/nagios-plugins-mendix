@@ -10,8 +10,10 @@ fi
 # file age in seconds = current_time - file_modification_time.
 FILEAGE=$(($(date +%s) - $(stat -c '%Y' "$FILE")))
 test $FILEAGE -lt $MAXAGE && {
-    echo "$FILE is less than $MAXAGE seconds old."
+    echo "OK: Last WAL was restored $FILEAGE seconds ago."
     exit 0
 }
-echo "$FILE is older than $MAXAGE seconds."
+
+WALFILE=$(head -n 1 $FILE)
+echo "CRITICAL: Last WAL $WALFILE restored more than $MAXAGE seconds ago ($FILEAGE seconds ago)."
 exit 2

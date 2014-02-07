@@ -11,3 +11,4 @@ if [ -n "$(git ls-files --others --exclude-standard)" ]; then
     echo >&2 "You have untracked files."
     exit 1
 fi
+echo "Clean."
