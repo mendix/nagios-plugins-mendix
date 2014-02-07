@@ -1,3 +1,15 @@
+nagios-plugins-mendix (0.1.9-1) unstable; urgency=low
+
+  [ Achiel ]
+  * etckeeper plugin always prints 'something'
+
+  [ Pim van den Berg ]
+  * check_last_wal_in_backlog: fix check for most recent wal in backlog
+  * check_last_wal_in_backlog: improve nagios ok and critical messages
+  * check_restored_logfile: improve nagios ok and critical messages
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Fri, 07 Feb 2014 11:22:03 +0100
+
 nagios-plugins-mendix (0.1.8-1) raring; urgency=low
 
   * check_webserver: nginx now returns a 503 for apps that are down
