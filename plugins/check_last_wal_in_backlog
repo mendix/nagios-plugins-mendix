@@ -22,15 +22,15 @@ MAXAGE=7200
 last_wal_in_backlog=$(ls -1rt /var/spool/postgresql/backlog/$prod_user/ /var/spool/postgresql/backlog/$failover_user/ | tail -1)
 
 if [ ! -f $last_wal_in_backlog ]; then
-    echo "$last_wal_in_backlog wal file not found in backlog"
+    echo "$last_wal_in_backlog WAL not found in backlog"
     exit 2
 fi
 
 # file age in seconds = current_time - file_modification_time.
 FILEAGE=$(($(date +%s) - $(stat -c '%Y' "$last_wal_in_backlog")))
 test $FILEAGE -lt $MAXAGE && {
-    echo "$last_wal_in_backlog is less than $MAXAGE seconds old."
+    echo "OK: Received $last_wal_in_backlog within the last $MAXAGE seconds."
     exit 0
 }
-echo "$last_wal_in_backlog is older than $MAXAGE seconds."
+echo "CRITICAL: No new WAL in backlog in the last $MAXAGE seconds. Last: $last_wal_in_backlog"
 exit 2
