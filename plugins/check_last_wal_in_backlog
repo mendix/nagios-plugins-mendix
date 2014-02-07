@@ -19,7 +19,7 @@ if ! id -u $failover_user >/dev/null 2>&1; then
 fi
 
 MAXAGE=7200
-last_wal_in_backlog=`find /var/spool/postgresql/backlog/$prod_user/ /var/spool/postgresql/backlog/$failover_user/ -type f -exec ls -1rt "{}" + | tail -1`
+last_wal_in_backlog=$(ls -1rt /var/spool/postgresql/backlog/$prod_user/ /var/spool/postgresql/backlog/$failover_user/ | tail -1)
 
 if [ ! -f $last_wal_in_backlog ]; then
     echo "$last_wal_in_backlog wal file not found in backlog"
