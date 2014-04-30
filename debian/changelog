@@ -1,3 +1,9 @@
+nagios-plugins-mendix (0.3-1) unstable; urgency=medium
+
+  * check_webserver: appcontroller sandboxes respond to head requests without Temporarily
+
+ -- Jouke Waleson <jouke.waleson@mendix.com>  Wed, 30 Apr 2014 21:20:49 +0200
+
 nagios-plugins-mendix (0.2-1) unstable; urgency=low
 
   * check_last_wal_in_backlog: last_wal_in_backlog needs to have a full path
