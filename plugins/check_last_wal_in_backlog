@@ -2,9 +2,10 @@
 
 prod_user=$1
 failover_user=$2
+maxage=$3
 
 if [ -z $prod_user ] || [ -z $failover_user ]; then
-    echo "usage $0 prod_user failover_user"
+    echo "usage $0 <prod_user> <failover_user> [max age in seconds]"
     exit 1
 fi
 
@@ -18,8 +19,13 @@ if ! id -u $failover_user >/dev/null 2>&1; then
     exit 1
 fi
 
-MAXAGE=7200
+if [ -z $maxage ]; then
+    maxage=7200
+fi
+
 last_wal_in_backlog=$(ls -1rt /var/spool/postgresql/backlog/$prod_user/ /var/spool/postgresql/backlog/$failover_user/ | tail -1 | xargs -i find /var/spool/postgresql/backlog/$prod_user/ /var/spool/postgresql/backlog/$failover_user/ -name "{}")
+
+basename_last_wal_in_backlog=$(basename $last_wal_in_backlog)
 
 if [ ! -f $last_wal_in_backlog ]; then
     echo "$last_wal_in_backlog WAL not found in backlog"
@@ -27,10 +33,10 @@ if [ ! -f $last_wal_in_backlog ]; then
 fi
 
 # file age in seconds = current_time - file_modification_time.
-FILEAGE=$(($(date +%s) - $(stat -c '%Y' "$last_wal_in_backlog")))
-test $FILEAGE -lt $MAXAGE && {
-    echo "OK: Received $last_wal_in_backlog within the last $MAXAGE seconds."
+fileage=$(($(date +%s) - $(stat -c '%Y' "$last_wal_in_backlog")))
+test $fileage -lt $maxage && {
+    echo "OK: Received $basename_last_wal_in_backlog $fileage seconds ago (threshold: $maxage seconds)."
     exit 0
 }
-echo "CRITICAL: No new WAL in backlog in the last $MAXAGE seconds. Last: $last_wal_in_backlog"
+echo "CRITICAL: No new WAL in backlog for at least $maxage seconds. Last: $basename_last_wal_in_backlog ($fileage seconds ago)."
 exit 2
