@@ -1,3 +1,9 @@
+nagios-plugins-mendix (0.4-1) unstable; urgency=low
+
+  * check_last_wal_in_backlog: configurable threshold
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 27 May 2014 17:50:15 +0200
+
 nagios-plugins-mendix (0.3-1) unstable; urgency=medium
 
   * check_webserver: appcontroller sandboxes respond to head requests without Temporarily
