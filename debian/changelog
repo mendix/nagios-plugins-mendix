@@ -1,3 +1,9 @@
+nagios-plugins-mendix (0.5-1) unstable; urgency=low
+
+  * etckeeper_unclean: fix "NRPE: Unable to read output", make a failure critical
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Fri, 30 May 2014 10:16:33 +0200
+
 nagios-plugins-mendix (0.4-1) unstable; urgency=low
 
   * check_last_wal_in_backlog: configurable threshold
