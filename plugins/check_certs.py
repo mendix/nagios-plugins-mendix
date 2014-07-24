@@ -20,16 +20,22 @@ default_opts = {'warning': 30, 'critical': 10, 'config': '/etc/ssl/check_certs.c
 MARKER_BEGIN = "-----BEGIN CERTIFICATE-----"
 MARKER_END = "-----END CERTIFICATE-----"
 
-STATE_OK=0
-STATE_WARNING=1
-STATE_CRITICAL=2
-STATE_UNKNOWN=3
+STATE_OK = 0
+STATE_WARNING = 1
+STATE_CRITICAL = 2
+STATE_UNKNOWN = 3
 
 # parse arguments
 parser = OptionParser()
-parser.add_option("-w", "--warning", dest="warning", help="Warning threshold expiration in days")
-parser.add_option("-c", "--critical", dest="critical", help="Critical threshold expiration in days")
-parser.add_option("-f", "--file", dest="filename", help="File containing list of certificates to check")
+parser.add_option("-w", "--warning",
+                  dest="warning",
+                  help="Warning threshold expiration in days")
+parser.add_option("-c", "--critical",
+                  dest="critical",
+                  help="Critical threshold expiration in days")
+parser.add_option("-f", "--file",
+                  dest="filename",
+                  help="File containing list of certificates to check")
 (options, args) = parser.parse_args()
 
 
@@ -49,12 +55,12 @@ options.critical = int(options.critical)
 
 fileExists = os.path.exists(options.filename)
 
-if(fileExists == False):
+if(fileExists is False):
     print "Error: File %s doesn't exist!" % options.filename
     exit(STATE_UNKNOWN)
 
 try:
-    infile = open(options.filename,"r")
+    infile = open(options.filename, "r")
 except IOError, e:
     print "Error - %s" % e
     exit(STATE_UNKNOWN)
@@ -70,12 +76,13 @@ ok_count = 0
 summary = list()
 files = []
 
+
 def expand_file_list(path):
     my_files = []
     if os.path.isfile(path):
         my_files.append(path)
     elif os.path.isdir(path):
-        my_files = [ os.path.join(path, i) for i in os.listdir(path)]
+        my_files = [os.path.join(path, i) for i in os.listdir(path)]
     return my_files
 
 for config_line in config_lines:
@@ -102,9 +109,12 @@ for fname in files:
         summary.append({'days': -1, 'status': "[CRIT]", 'fname': fname, 'cn': 'MISSING'})
         continue
 
+    if not MARKER_END in buffer:
+        continue
+
     certs = buffer.split(MARKER_END)
     for cert in certs:
-# filter out empty lines
+        # filter out empty lines
         if len(cert.strip()) == 0:
             continue
         mybuf = cert + MARKER_END
@@ -137,14 +147,14 @@ else:
     state_label = "OK"
 
 
-print "%s - Certificates: ok = %d, warn = %d, crit = %d (%d certs in %d files)" % (state_label, ok_count, warning_count, critical_count, total_count, files_count)
-print "Thresholds: warn = %d days, crit = %d days" % (options.warning, options.critical)
+print("%s - Certificates: ok = %d, warn = %d, crit = %d (%d certs in %d files)" %
+      (state_label, ok_count, warning_count, critical_count, total_count, files_count))
+print("Thresholds: warn = %d days, crit = %d days" % (options.warning, options.critical))
 
 # sort
 summary.sort(key=operator.itemgetter('days'))
 for info in summary:
-     print "%s (%s) expires in %d days %s" % (info['cn'], info['fname'], info['days'] , info['status'])
+    print("%s (%s) expires in %d days %s" %
+          (info['cn'], info['fname'], info['days'], info['status']))
 
 exit(state)
-
-# vim:sw=4:ts=4:expandtab
