@@ -109,6 +109,9 @@ for fname in files:
         summary.append({'days': -1, 'status': "[CRIT]", 'fname': fname, 'cn': 'MISSING'})
         continue
 
+    if not MARKER_END in buffer:
+        continue
+
     certs = buffer.split(MARKER_END)
     for cert in certs:
         # filter out empty lines
