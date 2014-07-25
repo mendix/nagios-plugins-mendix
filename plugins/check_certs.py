@@ -8,12 +8,9 @@
 # Author: Xiwen Cheng <xiwen.cheng@mendix.com>
 
 import os
-import re
-import sys
-from datetime import datetime, timedelta
-import getopt
+from datetime import datetime
 from optparse import OptionParser
-from OpenSSL import crypto, SSL
+from OpenSSL import crypto
 import operator
 
 default_opts = {'warning': 30, 'critical': 10, 'config': '/etc/ssl/check_certs.cfg'}
@@ -109,7 +106,7 @@ for fname in files:
         summary.append({'days': -1, 'status': "[CRIT]", 'fname': fname, 'cn': 'MISSING'})
         continue
 
-    if not MARKER_END in buffer:
+    if MARKER_END not in buffer:
         continue
 
     certs = buffer.split(MARKER_END)
