@@ -59,6 +59,9 @@ do
         elif [ $httpheader = "HTTP/1.1 503 Service Temporarily Unavailable" ] ; then
             echo "HTTP return code is 301 and HTTPS return code is 503 because the application is offline"
             exit 0
+        elif [ $httpheader = "HTTP/1.1 403 Forbidden" ] ; then
+            echo "HTTP return code is 301 and HTTPS return code is 403 because access to this application is restricted"
+            exit 0
         elif [ $httpheader = "HTTP/1.1 503 Service Unavailable" ] ; then
             echo "HTTP return code is 301 and HTTPS return code is 503 because the application is offline"
             exit 0
