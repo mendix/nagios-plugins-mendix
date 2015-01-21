@@ -1,0 +1,74 @@
+#!/bin/bash
+
+script_name=$0
+
+# defaults
+warning=80
+critical=90
+
+# nagios states
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+
+function usage()
+{
+    echo "Invalid options, usage: ${script_name} -w 80 -c 90"
+}
+
+function used_percentage_partition()
+{
+    partition="$1"
+    percent="$(df | grep $partition | head -n1 | awk '{print $5}' | tr -d %)"
+    echo "$percent"
+}
+
+while getopts ":w:c:" opt; do
+    case $opt in
+    w)
+        warning=$OPTARG
+        ;;
+    c)
+        critical=$OPTARG
+        ;;
+    \?)
+        usage
+        exit $STATE_UNKNOWN
+        ;;
+    :)
+        echo "Option -$OPTARG requires an argument."
+        exit $STATE_UNKNOWN
+        ;;
+    esac
+done
+
+rootfs="$(used_percentage_partition ' /$')"
+var="$(used_percentage_partition ' /var$')"
+srv="$(used_percentage_partition ' /srv$')"
+
+target="$rootfs"
+if [ ! -z "$srv" ]; then
+    target="$srv"
+elif [ ! -z "$var" ]; then
+    target="$var"
+fi
+
+MSG="Disk usage ${target}% (warning=${warning}, critical=${critical})"
+
+if [ -z "$target" ]; then
+    echo "UNKNOWN: $MSG"
+    exit $STATE_UNKNOWN
+fi
+
+if [ $target -ge $critical ]; then
+    echo "CRITICAL: $MSG"
+    exit $STATE_CRITICAL
+elif [ $target -ge $warning ]; then
+    echo "WARNING: $MSG"
+    exit $STATE_WARNING
+else
+    echo "OK: $MSG"
+    exit $STATE_OK
+fi
