@@ -5,21 +5,23 @@ LEVEL_CRITICAL=50
 
 FREE_MEM=$(free -tm | grep Total | awk '{print $4}')
 
+MSG="${FREE_MEM}MB RAM free (warning=$LEVEL_WARNING, critical=$LEVEL_CRITICAL)"
+
 INT_REGEX='^[0-9]+$'
 if ! [[ $FREE_MEM =~ $INT_REGEX ]] ; then
-    echo UNKNOWN Free memory level
+    echo "UNKNOWN: $MSG"
     exit 3
 fi
 
-if [ "$FREE_MEM" -le "$LEVEL_CRITICAL" ]; then
-    echo CRITICAL Free memory level
+if [ "$FREE_MEM" -lt "$LEVEL_CRITICAL" ]; then
+    echo "CRITICAL: $MSG"
     exit 2
 fi
 
-if [ "$FREE_MEM" -le "$LEVEL_WARNING" ]; then
-    echo WARNING Free memory level
+if [ "$FREE_MEM" -lt "$LEVEL_WARNING" ]; then
+    echo "WARNING: $MSG"
     exit 1
 fi
 
-echo OK Free memory level
+echo OK: $MSG
 exit 0
