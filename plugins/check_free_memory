@@ -1,0 +1,25 @@
+#!/bin/bash
+
+LEVEL_WARNING=150
+LEVEL_CRITICAL=50
+
+FREE_MEM=$(free -tm | grep Total | awk '{print $4}')
+
+INT_REGEX='^[0-9]+$'
+if ! [[ $FREE_MEM =~ $INT_REGEX ]] ; then
+    echo UNKNOWN Free memory level
+    exit 3
+fi
+
+if [ "$FREE_MEM" -le "$LEVEL_CRITICAL" ]; then
+    echo CRITICAL Free memory level
+    exit 2
+fi
+
+if [ "$FREE_MEM" -le "$LEVEL_WARNING" ]; then
+    echo WARNING Free memory level
+    exit 1
+fi
+
+echo OK Free memory level
+exit 0
