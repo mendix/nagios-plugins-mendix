@@ -1,3 +1,13 @@
+nagios-plugins-mendix (1.1-1) unstable; urgency=medium
+
+  [ Xiwen Cheng ]
+  * S318306: check_app_disk that intelligently checks usage of /srv, /var and / (in this order)
+
+  [ Riccardo M. Cefala ]
+  * S396882: add check for free memory
+
+ -- Riccardo M. Cefala <riccardo.cefala@mendix.com>  Thu, 22 Jan 2015 14:39:58 +0100
+
 nagios-plugins-mendix (1.0-1) unstable; urgency=medium
 
   [ Hans van Kranenburg ]
