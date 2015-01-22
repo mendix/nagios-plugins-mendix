@@ -1,27 +1,65 @@
 #!/bin/bash
 
-LEVEL_WARNING=150
-LEVEL_CRITICAL=50
+script_name=$0
 
-FREE_MEM=$(free -tm | grep Total | awk '{print $4}')
+# defaults
+warning=150
+critical=50
 
-MSG="${FREE_MEM}MB RAM free (warning=$LEVEL_WARNING, critical=$LEVEL_CRITICAL)"
+# nagios states
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+function usage()
+{
+    echo "Invalid options, usage: ${script_name} -w ${warning} -c ${critical}"
+}
+
+while getopts ":w:c:m:" opt; do
+    case $opt in
+    w)
+        warning=$OPTARG
+        ;;
+    c)
+        critical=$OPTARG
+        ;;
+    m)
+        FREE_MEM=$OPTARG
+        ;;
+    \?)
+        usage
+        exit $STATE_UNKNOWN
+        ;;
+    :)
+        echo "Option -$OPTARG requires an argument."
+        exit $STATE_UNKNOWN
+        ;;
+    esac
+done
+
+if [ -z "$FREE_MEM" ]; then
+    FREE_MEM=$(free -tm | grep "buffers/cache" | awk '{print $4}')
+fi
+
+MSG="${FREE_MEM}MB RAM free (warning=$warning, critical=$critical)"
 
 INT_REGEX='^[0-9]+$'
-if ! [[ $FREE_MEM =~ $INT_REGEX ]] ; then
+if ! [[ $FREE_MEM =~ $INT_REGEX ]]; then
     echo "UNKNOWN: $MSG"
-    exit 3
+    exit $STATE_UNKNOWN
 fi
 
-if [ "$FREE_MEM" -lt "$LEVEL_CRITICAL" ]; then
+if [ "$FREE_MEM" -le "$critical" ]; then
     echo "CRITICAL: $MSG"
-    exit 2
+    exit $STATE_CRITICAL
 fi
 
-if [ "$FREE_MEM" -lt "$LEVEL_WARNING" ]; then
+if [ "$FREE_MEM" -le "$warning" ]; then
     echo "WARNING: $MSG"
-    exit 1
+    exit $STATE_WARNING
 fi
 
 echo OK: $MSG
-exit 0
+exit $STATE_OK
