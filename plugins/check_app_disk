@@ -47,12 +47,15 @@ done
 rootfs="$(used_percentage_partition ' /$')"
 var="$(used_percentage_partition ' /var$')"
 srv="$(used_percentage_partition ' /srv$')"
+postgresql="$(used_percentage_partition ' /var/lib/postgresql$')"
 
 target="$rootfs"
 if [ ! -z "$srv" ]; then
     target="$srv"
 elif [ ! -z "$var" ]; then
     target="$var"
+elif [ ! -z "$postgresql" ]; then
+    target="$postgresql"
 fi
 
 MSG="Disk usage ${target}% (warning=${warning}, critical=${critical})"
