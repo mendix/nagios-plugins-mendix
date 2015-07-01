@@ -1,3 +1,10 @@
+nagios-plugins-mendix (1.2-1) unstable; urgency=medium
+
+  [ Daniel van Dorp ]
+  * adds disk alerts on /var/lib/postgresql to check_app_disk
+
+ -- Riccardo M. Cefala <riccardo.cefala@mendix.com>  Wed, 01 Jul 2015 10:35:24 +0200
+
 nagios-plugins-mendix (1.1-1) unstable; urgency=medium
 
   [ Xiwen Cheng ]
