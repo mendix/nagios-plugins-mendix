@@ -1,0 +1,63 @@
+#!/usr/bin/python
+
+import re
+import sys
+
+# as seen in cmds-filesystem.c:
+# printf("Label: '%s' ", device->label);
+# printf("Label: none ");
+# printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", blahblah
+re_used = re.compile(r'.*FS bytes used (?P<used>[\d.]+)(?P<used_kmgt>[KMGT])iB')
+
+# printf("\tdevid %4llu size %s used %s path %s\n", blahblah
+re_devid = re.compile(r'.*size (?P<total>[\d.]+)(?P<total_kmgt>[KMGT])iB '
+                      'used (?P<allocated>[\d.]+)(?P<allocated_kmgt>[KMGT])iB')
+
+
+def to_bytes(size, kgmt):
+    iB = {'K': 1, 'M': 2, 'G': 3, 'T': 4}
+    return size * 1024**iB[kgmt]
+
+
+def main(lines):
+    used = None
+    allocated = 0
+    total = 0
+
+    for line in lines:
+        match_used = re_used.match(line)
+        if match_used is not None:
+            used = to_bytes(float(match_used.group('used')),
+                            match_used.group('used_kmgt'))
+            continue
+        match_devid = re_devid.match(line)
+        if match_devid is not None:
+            allocated = allocated + to_bytes(float(match_devid.group('allocated')),
+                                             match_devid.group('allocated_kmgt'))
+            total = total + to_bytes(float(match_devid.group('total')),
+                                     match_devid.group('total_kmgt'))
+
+    print("total: %s, allocated: %s, used: %s" % (total, allocated, used))
+
+
+def test():
+    main([
+        "Label: none  uuid: 75315336-a3db-455b-9bc3-5c1326cc2a3c",
+        "\tTotal devices 4 FS bytes used 16.02GiB",
+        "\tdevid    1 size 10.00GiB used 9.96GiB path /dev/mapper/zooi-btrfs_1",
+        "\tdevid    2 size 10.00GiB used 9.96GiB path /dev/mapper/zooi-btrfs_2",
+        "\tdevid    3 size 10.00GiB used 9.96GiB path /dev/mapper/zooi-btrfs_3",
+        "\tdevid    4 size 10.00GiB used 9.96GiB path /dev/mapper/zooi-btrfs_4",
+        "",
+        "btrfs-progs v4.0",
+    ])
+    main([
+        "Label: none  uuid: 9bc9947e-070f-4bbc-872e-49b2a39b3f7b",
+        "\tTotal devices 1 FS bytes used 10.26TiB",
+        "\tdevid    1 size 12.00TiB used 11.47TiB path /dev/xvdb",
+        "",
+        "Btrfs v3.17",
+    ])
+
+if __name__ == "__main__":
+    test()
