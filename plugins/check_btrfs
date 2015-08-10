@@ -1,0 +1,198 @@
+#!/usr/bin/python
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+
+STATE_OK = 0
+STATE_WARNING = 1
+STATE_CRITICAL = 2
+STATE_UNKNOWN = 3
+
+# as seen in cmds-filesystem.c:
+# printf("Label: '%s' ", device->label);
+# printf("Label: none ");
+# printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", blahblah
+re_used = re.compile(r'.*FS bytes used (?P<used>[\d.]+)(?P<used_kmgt>[KMGT])iB')
+
+# printf("\tdevid %4llu size %s used %s path %s\n", blahblah
+re_devid = re.compile(r'.*size (?P<total>[\d.]+)(?P<total_kmgt>[KMGT])iB '
+                      'used (?P<allocated>[\d.]+)(?P<allocated_kmgt>[KMGT])iB')
+
+
+class CheckBtrfsException(Exception):
+    def __init__(self, status, msg):
+        self.status = status
+        self.msg = msg
+
+
+def get_args():
+    parser = argparse.ArgumentParser("Check BTRFS filesystem usage")
+    parser.add_argument('-awg', '--allocated-warning-gib', type=int,
+                        help='Exit with WARNING status if less than the specified amount of '
+                        'disk space (in GiB) is unallocated')
+    parser.add_argument('-acg', '--allocated-critical-gib', type=int,
+                        help='Exit with CRITICAL status if less than the specified amount of '
+                        'disk space (in GiB) is unallocated')
+    parser.add_argument('-awp', '--allocated-warning-percent', type=int,
+                        help='Exit with WARNING status if more than the specified percent of '
+                        'disk space is allocated')
+    parser.add_argument('-acp', '--allocated-critical-percent', type=int,
+                        help='Exit with CRITICAL status if more than the specified percent of '
+                        'disk space is allocated')
+    parser.add_argument('-uwp', '--used-warning-percent', type=int,
+                        help='Exit with WARNING status if less than the specified percent of '
+                        'allocated space is actually used')
+    parser.add_argument('-ucp', '--used-critical-percent', type=int,
+                        help='Exit with CRITICAL status if less than the specified percent of '
+                        'allocated space is actually used')
+    parser.add_argument('-b', '--block-device', required=True,
+                        help='Path to any block device that is part of the btrfs file system')
+    args = parser.parse_args()
+
+    if not os.path.exists(args.block_device):
+        raise CheckBtrfsException(STATE_CRITICAL,
+                                  'Block device does not exist: %s' % args.block_device)
+
+    if not os.access(args.block_device, os.R_OK):
+        raise CheckBtrfsException(STATE_CRITICAL,
+                                  'CRITICAL: Block device is not accessible: %s' %
+                                  args.block_device)
+
+    if args.allocated_warning_gib is not None and args.allocated_warning_gib < 0:
+            raise CheckBtrfsException(
+                STATE_CRITICAL, 'CRITICAL: Allocated GiB warning threshold must be a '
+                'positive integer value: %s' % args.allocated_warning_gib)
+    if args.allocated_critical_gib is not None and args.allocated_critical_gib < 0:
+            raise CheckBtrfsException(
+                STATE_CRITICAL, 'CRITICAL: Allocated GiB critical threshold must be a '
+                'positive integer value: %s' % args.allocated_critical_gib)
+
+    if (args.allocated_warning_percent is not None and
+       (args.allocated_warning_percent < 0 or args.allocated_warning_percent > 100)):
+            raise CheckBtrfsException(
+                STATE_CRITICAL, 'CRITICAL: Allocated warning percentage must be between '
+                '0 and 100 (given: %s)' % args.allocated_warning_percent)
+    if (args.allocated_critical_percent is not None and
+       (args.allocated_critical_percent < 0 or args.allocated_critical_percent > 100)):
+            raise CheckBtrfsException(
+                STATE_CRITICAL, 'CRITICAL: Allocated critical percentage must be between '
+                '0 and 100 (given: %s)' % args.allocated_critical_percent)
+
+    if (args.used_warning_percent is not None and
+       (args.used_warning_percent < 0 or args.used_warning_percent > 100)):
+            raise CheckBtrfsException(
+                STATE_CRITICAL, 'CRITICAL: Used warning percentage must be between'
+                '0 and 100 (given: %s)' % args.used_warning_percent)
+    if (args.used_critical_percent is not None and
+       (args.used_critical_percent < 0 or args.used_critical_percent > 100)):
+            raise CheckBtrfsException(
+                STATE_CRITICAL, 'CRITICAL: Used critical percentage must be between'
+                '0 and 100 (given: %s)' % args.used_critical_percent)
+
+    return args
+
+
+def to_bytes(size, kgmt):
+    iB = {'K': 1, 'M': 2, 'G': 3, 'T': 4}
+    return int(size * 1024**iB[kgmt])
+
+
+def parse_btrfs_fi_show(block_device):
+    proc = subprocess.Popen(('btrfs', 'fi', 'show', block_device),
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            env={"PATH": "/bin:/sbin"})
+    stdout, stderr = proc.communicate()
+    if proc.returncode != 0:
+        raise CheckBtrfsException(STATE_CRITICAL,
+                                  'Non-zero return code on btrfs fi show %s: %s\n'
+                                  'stdout: %s\nstderr: %s' %
+                                  (block_device, proc.returncode, stdout, stderr))
+
+    used = None
+    allocated = 0
+    total = 0
+
+    for line in stdout.splitlines():
+        match_used = re_used.match(line)
+        if match_used is not None:
+            used = to_bytes(float(match_used.group('used')),
+                            match_used.group('used_kmgt'))
+            continue
+        match_devid = re_devid.match(line)
+        if match_devid is not None:
+            allocated = allocated + to_bytes(float(match_devid.group('allocated')),
+                                             match_devid.group('allocated_kmgt'))
+            total = total + to_bytes(float(match_devid.group('total')),
+                                     match_devid.group('total_kmgt'))
+
+    return (total, allocated, used)
+
+
+def check_usage(total, allocated, used, args):
+    warning = False
+    critical = False
+    msg = []
+
+    unallocated_gib = (total - allocated) / 1073741824
+    allocated_pct = (allocated * 100) / total
+    used_pct = (used * 100) / allocated
+
+    if ((args.allocated_critical_gib is not None and
+         args.allocated_critical_gib > unallocated_gib)):
+        msg.append('Critical: Unallocated left: %s GiB' % unallocated_gib)
+        critical = True
+    elif (args.allocated_warning_gib is not None and
+          args.allocated_warning_gib > unallocated_gib):
+        msg.append('Warning: Unallocated left: %s GiB' % unallocated_gib)
+        warning = True
+
+    if ((args.allocated_critical_percent is not None and
+         allocated_pct >= args.allocated_critical_percent)):
+        msg.append('Critical: Allocated: %s%%' % allocated_pct)
+        critical = True
+    elif (args.allocated_warning_percent is not None and
+          allocated_pct >= args.allocated_warning_percent):
+        msg.append('Warning: Allocated: %s%%' % allocated_pct)
+        warning = True
+
+    if ((args.used_critical_percent is not None and
+         used_pct <= args.used_critical_percent)):
+        msg.append('Critical: Used: %s%%' % used_pct)
+        critical = True
+    elif (args.used_warning_percent is not None and
+          used_pct <= args.used_warning_percent):
+        msg.append('Warning: Used: %s%%' % used_pct)
+        warning = True
+
+    if len(msg) > 0:
+        print(', '.join(msg))
+    else:
+        print('BTRFS OK')
+
+    print('Total size: %.2f GiB, Allocated: %.2f GiB (%s%%), Used: %.2f GiB (%s%%)'
+          % (total / 1073741824.0,
+             allocated / 1073741824.0, allocated_pct,
+             used / 1073741824.0, used_pct))
+
+    if critical is True:
+        return STATE_CRITICAL
+    if warning is True:
+        return STATE_WARNING
+    return STATE_OK
+
+
+def main():
+    try:
+        args = get_args()
+        (total, allocated, used) = parse_btrfs_fi_show(args.block_device)
+        sys.exit(check_usage(total, allocated, used, args))
+    except CheckBtrfsException as cbe:
+        print cbe.msg
+        sys.exit(cbe.status)
+
+
+if __name__ == "__main__":
+    main()
