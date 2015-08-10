@@ -56,6 +56,11 @@ def get_args():
         raise CheckBtrfsException(STATE_CRITICAL,
                                   'Block device does not exist: %s' % args.block_device)
 
+    if not os.access(args.block_device, os.R_OK):
+        raise CheckBtrfsException(STATE_CRITICAL,
+                                  'CRITICAL: Block device is not accessible: %s' %
+                                  args.block_device)
+
     if args.allocated_warning_gib is not None and args.allocated_warning_gib < 0:
             raise CheckBtrfsException(
                 STATE_CRITICAL, 'CRITICAL: Allocated GiB warning threshold must be a '
