@@ -96,8 +96,9 @@ def to_bytes(size, kgmt):
 
 
 def parse_btrfs_fi_show(block_device):
-    proc = subprocess.Popen(('/bin/btrfs', 'fi', 'show', block_device),
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(('btrfs', 'fi', 'show', block_device),
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            env={"PATH": "/bin:/sbin"})
     stdout, stderr = proc.communicate()
     if proc.returncode != 0:
         raise CheckBtrfsException(STATE_CRITICAL,
