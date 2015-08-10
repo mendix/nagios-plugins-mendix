@@ -1,3 +1,15 @@
+nagios-plugins-mendix (1.3-1) unstable; urgency=medium
+
+  [ Hans van Kranenburg ]
+  * Why is the unix way so incredibly stupid?
+  * check_btrfs: finish plugin implementation
+
+  [ Pim van den Berg ]
+  * check_btrfs: support /sbin/btrfs for btrfs-tools < 4.0
+  * check_btrfs: check if block device is accessible for the plugin
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Mon, 10 Aug 2015 13:47:47 +0200
+
 nagios-plugins-mendix (1.2-1) unstable; urgency=medium
 
   [ Daniel van Dorp ]
