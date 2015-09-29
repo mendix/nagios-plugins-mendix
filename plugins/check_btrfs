@@ -165,11 +165,21 @@ def check_usage(total, allocated, used, args):
         elif used_pct <= args.used_warning_percent:
             msg.append('Warning: Used: %s%%' % used_pct)
             warning = True
+    else:
+        if used_pct <= args.used_critical_percent:
+            msg.append('Critical: Used: %s%%, ignoring threshold because allocated: %s%% (<%s%%)' %
+                       (used_pct, allocated_pct, args.minimal_allocated_percent))
+        elif used_pct <= args.used_warning_percent:
+            msg.append('Warning: Used: %s%%, ignoring threshold because allocated: %s%% (<%s%%)' %
+                       (used_pct, allocated_pct, args.minimal_allocated_percent))
 
-    if len(msg) > 0:
+    if critical is True or warning is True:
         print(', '.join(msg))
     else:
-        print('BTRFS OK')
+        if len(msg) > 0:
+            print('BTRFS OK: %s' % ', '.join(msg))
+        else:
+            print('BTRFS OK')
 
     print('Total size: %.2f GiB, Allocated: %.2f GiB (%s%%), Used: %.2f GiB (%s%%)'
           % (total / 1073741824.0,
