@@ -30,22 +30,22 @@ class CheckBtrfsException(Exception):
 
 def get_args():
     parser = argparse.ArgumentParser("Check BTRFS filesystem usage")
-    parser.add_argument('-awg', '--allocated-warning-gib', type=int,
+    parser.add_argument('-awg', '--allocated-warning-gib', type=int, default=0,
                         help='Exit with WARNING status if less than the specified amount of '
                         'disk space (in GiB) is unallocated')
-    parser.add_argument('-acg', '--allocated-critical-gib', type=int,
+    parser.add_argument('-acg', '--allocated-critical-gib', type=int, default=0,
                         help='Exit with CRITICAL status if less than the specified amount of '
                         'disk space (in GiB) is unallocated')
-    parser.add_argument('-awp', '--allocated-warning-percent', type=int,
+    parser.add_argument('-awp', '--allocated-warning-percent', type=int, default=100,
                         help='Exit with WARNING status if more than the specified percent of '
                         'disk space is allocated')
-    parser.add_argument('-acp', '--allocated-critical-percent', type=int,
+    parser.add_argument('-acp', '--allocated-critical-percent', type=int, default=100,
                         help='Exit with CRITICAL status if more than the specified percent of '
                         'disk space is allocated')
-    parser.add_argument('-uwp', '--used-warning-percent', type=int,
+    parser.add_argument('-uwp', '--used-warning-percent', type=int, default=0,
                         help='Exit with WARNING status if less than the specified percent of '
                         'allocated space is actually used')
-    parser.add_argument('-ucp', '--used-critical-percent', type=int,
+    parser.add_argument('-ucp', '--used-critical-percent', type=int, default=0,
                         help='Exit with CRITICAL status if less than the specified percent of '
                         'allocated space is actually used')
     parser.add_argument('-map', '--minimal-allocated-percent', type=int, default=25,
@@ -64,41 +64,37 @@ def get_args():
                                   'CRITICAL: Block device is not accessible: %s' %
                                   args.block_device)
 
-    if args.allocated_warning_gib is not None and args.allocated_warning_gib < 0:
-            raise CheckBtrfsException(
-                STATE_CRITICAL, 'CRITICAL: Allocated GiB warning threshold must be a '
-                'positive integer value: %s' % args.allocated_warning_gib)
-    if args.allocated_critical_gib is not None and args.allocated_critical_gib < 0:
-            raise CheckBtrfsException(
-                STATE_CRITICAL, 'CRITICAL: Allocated GiB critical threshold must be a '
-                'positive integer value: %s' % args.allocated_critical_gib)
+    if args.allocated_warning_gib < 0:
+        raise CheckBtrfsException(
+            STATE_CRITICAL, 'CRITICAL: Allocated GiB warning threshold must be a '
+            'positive integer value: %s' % args.allocated_warning_gib)
+    if args.allocated_critical_gib < 0:
+        raise CheckBtrfsException(
+            STATE_CRITICAL, 'CRITICAL: Allocated GiB critical threshold must be a '
+            'positive integer value: %s' % args.allocated_critical_gib)
 
-    if (args.allocated_warning_percent is not None and
-       (args.allocated_warning_percent < 0 or args.allocated_warning_percent > 100)):
-            raise CheckBtrfsException(
-                STATE_CRITICAL, 'CRITICAL: Allocated warning percentage must be between '
-                '0 and 100 (given: %s)' % args.allocated_warning_percent)
-    if (args.allocated_critical_percent is not None and
-       (args.allocated_critical_percent < 0 or args.allocated_critical_percent > 100)):
-            raise CheckBtrfsException(
-                STATE_CRITICAL, 'CRITICAL: Allocated critical percentage must be between '
-                '0 and 100 (given: %s)' % args.allocated_critical_percent)
+    if args.allocated_warning_percent < 0 or args.allocated_warning_percent > 100:
+        raise CheckBtrfsException(
+            STATE_CRITICAL, 'CRITICAL: Allocated warning percentage must be between '
+            '0 and 100 (given: %s)' % args.allocated_warning_percent)
+    if args.allocated_critical_percent < 0 or args.allocated_critical_percent > 100:
+        raise CheckBtrfsException(
+            STATE_CRITICAL, 'CRITICAL: Allocated critical percentage must be between '
+            '0 and 100 (given: %s)' % args.allocated_critical_percent)
 
     if args.minimal_allocated_percent < 0 or args.minimal_allocated_percent > 100:
-            raise CheckBtrfsException(
-                STATE_CRITICAL, 'CRITICAL: Minimal allocated percentage must be between'
-                '0 and 100 (given: %s)' % args.minimal_allocated_percent)
+        raise CheckBtrfsException(
+            STATE_CRITICAL, 'CRITICAL: Minimal allocated percentage must be between'
+            '0 and 100 (given: %s)' % args.minimal_allocated_percent)
 
-    if (args.used_warning_percent is not None and
-       (args.used_warning_percent < 0 or args.used_warning_percent > 100)):
-            raise CheckBtrfsException(
-                STATE_CRITICAL, 'CRITICAL: Used warning percentage must be between'
-                '0 and 100 (given: %s)' % args.used_warning_percent)
-    if (args.used_critical_percent is not None and
-       (args.used_critical_percent < 0 or args.used_critical_percent > 100)):
-            raise CheckBtrfsException(
-                STATE_CRITICAL, 'CRITICAL: Used critical percentage must be between'
-                '0 and 100 (given: %s)' % args.used_critical_percent)
+    if args.used_warning_percent < 0 or args.used_warning_percent > 100:
+        raise CheckBtrfsException(
+            STATE_CRITICAL, 'CRITICAL: Used warning percentage must be between'
+            '0 and 100 (given: %s)' % args.used_warning_percent)
+    if args.used_critical_percent < 0 or args.used_critical_percent > 100:
+        raise CheckBtrfsException(
+            STATE_CRITICAL, 'CRITICAL: Used critical percentage must be between'
+            '0 and 100 (given: %s)' % args.used_critical_percent)
 
     return args
 
@@ -148,31 +144,25 @@ def check_usage(total, allocated, used, args):
     allocated_pct = (allocated * 100) / total
     used_pct = (used * 100) / allocated
 
-    if ((args.allocated_critical_gib is not None and
-         args.allocated_critical_gib > unallocated_gib)):
+    if args.allocated_critical_gib > unallocated_gib:
         msg.append('Critical: Unallocated left: %s GiB' % unallocated_gib)
         critical = True
-    elif (args.allocated_warning_gib is not None and
-          args.allocated_warning_gib > unallocated_gib):
+    elif args.allocated_warning_gib > unallocated_gib:
         msg.append('Warning: Unallocated left: %s GiB' % unallocated_gib)
         warning = True
 
-    if ((args.allocated_critical_percent is not None and
-         allocated_pct >= args.allocated_critical_percent)):
+    if allocated_pct >= args.allocated_critical_percent:
         msg.append('Critical: Allocated: %s%%' % allocated_pct)
         critical = True
-    elif (args.allocated_warning_percent is not None and
-          allocated_pct >= args.allocated_warning_percent):
+    elif allocated_pct >= args.allocated_warning_percent:
         msg.append('Warning: Allocated: %s%%' % allocated_pct)
         warning = True
 
     if allocated_pct > args.minimal_allocated_percent:
-        if ((args.used_critical_percent is not None and
-             used_pct <= args.used_critical_percent)):
+        if used_pct <= args.used_critical_percent:
             msg.append('Critical: Used: %s%%' % used_pct)
             critical = True
-        elif (args.used_warning_percent is not None and
-              used_pct <= args.used_warning_percent):
+        elif used_pct <= args.used_warning_percent:
             msg.append('Warning: Used: %s%%' % used_pct)
             warning = True
 
