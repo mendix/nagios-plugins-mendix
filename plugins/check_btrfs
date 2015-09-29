@@ -48,6 +48,9 @@ def get_args():
     parser.add_argument('-ucp', '--used-critical-percent', type=int,
                         help='Exit with CRITICAL status if less than the specified percent of '
                         'allocated space is actually used')
+    parser.add_argument('-map', '--minimal-allocated-percent', type=int, default=25,
+                        help='Ignore used percentage if allocated it is below this percentage, '
+                        'e.g. in case of an almost empty disk')
     parser.add_argument('-b', '--block-device', required=True,
                         help='Path to any block device that is part of the btrfs file system')
     args = parser.parse_args()
@@ -80,6 +83,11 @@ def get_args():
             raise CheckBtrfsException(
                 STATE_CRITICAL, 'CRITICAL: Allocated critical percentage must be between '
                 '0 and 100 (given: %s)' % args.allocated_critical_percent)
+
+    if args.minimal_allocated_percent < 0 or args.minimal_allocated_percent > 100:
+            raise CheckBtrfsException(
+                STATE_CRITICAL, 'CRITICAL: Minimal allocated percentage must be between'
+                '0 and 100 (given: %s)' % args.minimal_allocated_percent)
 
     if (args.used_warning_percent is not None and
        (args.used_warning_percent < 0 or args.used_warning_percent > 100)):
@@ -158,14 +166,15 @@ def check_usage(total, allocated, used, args):
         msg.append('Warning: Allocated: %s%%' % allocated_pct)
         warning = True
 
-    if ((args.used_critical_percent is not None and
-         used_pct <= args.used_critical_percent)):
-        msg.append('Critical: Used: %s%%' % used_pct)
-        critical = True
-    elif (args.used_warning_percent is not None and
-          used_pct <= args.used_warning_percent):
-        msg.append('Warning: Used: %s%%' % used_pct)
-        warning = True
+    if allocated_pct > args.minimal_allocated_percent:
+        if ((args.used_critical_percent is not None and
+             used_pct <= args.used_critical_percent)):
+            msg.append('Critical: Used: %s%%' % used_pct)
+            critical = True
+        elif (args.used_warning_percent is not None and
+              used_pct <= args.used_warning_percent):
+            msg.append('Warning: Used: %s%%' % used_pct)
+            warning = True
 
     if len(msg) > 0:
         print(', '.join(msg))
