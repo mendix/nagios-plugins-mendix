@@ -1,3 +1,11 @@
+nagios-plugins-mendix (1.4-1) unstable; urgency=medium
+
+  * check_btrfs: add minimal allocated percent option
+  * check_btrfs: set defaults to remove None-checks
+  * check_btrfs: Mention ignored usage in OK output
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Wed, 30 Sep 2015 13:11:50 +0200
+
 nagios-plugins-mendix (1.3-1) unstable; urgency=medium
 
   [ Hans van Kranenburg ]
