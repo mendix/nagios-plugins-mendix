@@ -1,3 +1,15 @@
+nagios-plugins-mendix (1.5-1) unstable; urgency=medium
+
+  [ Jouke Waleson ]
+  * 564374: add postfix_mailqueue check
+
+  [ Pim van den Berg ]
+  * plugins/check_btrfs: start using the btrfs_usage library
+  * check_btrfs: add support for wasted space
+  * debian/control: suggest python-mx-btrfs for check_btrfs
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Thu, 31 Dec 2015 13:19:58 +0100
+
 nagios-plugins-mendix (1.4-1) unstable; urgency=medium
 
   * check_btrfs: add minimal allocated percent option
