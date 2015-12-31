@@ -2,24 +2,13 @@
 
 import argparse
 import os
-import re
-import subprocess
 import sys
+from mx_btrfs.btrfs_usage import BtrfsUsage, BtrfsUsageException
 
 STATE_OK = 0
 STATE_WARNING = 1
 STATE_CRITICAL = 2
 STATE_UNKNOWN = 3
-
-# as seen in cmds-filesystem.c:
-# printf("Label: '%s' ", device->label);
-# printf("Label: none ");
-# printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", blahblah
-re_used = re.compile(r'.*FS bytes used (?P<used>[\d.]+)(?P<used_kmgt>[KMGT])iB')
-
-# printf("\tdevid %4llu size %s used %s path %s\n", blahblah
-re_devid = re.compile(r'.*size (?P<total>[\d.]+)(?P<total_kmgt>[KMGT])iB '
-                      'used (?P<allocated>[\d.]+)(?P<allocated_kmgt>[KMGT])iB')
 
 
 class CheckBtrfsException(Exception):
@@ -51,18 +40,18 @@ def get_args():
     parser.add_argument('-map', '--minimal-allocated-percent', type=int, default=25,
                         help='Ignore used percentage if allocated it is below this percentage, '
                         'e.g. in case of an almost empty disk')
-    parser.add_argument('-b', '--block-device', required=True,
-                        help='Path to any block device that is part of the btrfs file system')
+    parser.add_argument('-m', '--mountpoint', required=True,
+                        help='Path to the BTRFS mountpoint')
     args = parser.parse_args()
 
-    if not os.path.exists(args.block_device):
+    if not os.path.exists(args.mountpoint):
         raise CheckBtrfsException(STATE_CRITICAL,
-                                  'Block device does not exist: %s' % args.block_device)
+                                  'BTRFS mountpoint does not exist: %s' % args.mountpoint)
 
-    if not os.access(args.block_device, os.R_OK):
+    if not os.access(args.mountpoint, os.R_OK):
         raise CheckBtrfsException(STATE_CRITICAL,
-                                  'CRITICAL: Block device is not accessible: %s' %
-                                  args.block_device)
+                                  'CRITICAL: Mountpoint is not accessible: %s' %
+                                  args.mountpoint)
 
     if args.allocated_warning_gib < 0:
         raise CheckBtrfsException(
@@ -99,49 +88,13 @@ def get_args():
     return args
 
 
-def to_bytes(size, kgmt):
-    iB = {'K': 1, 'M': 2, 'G': 3, 'T': 4}
-    return int(size * 1024**iB[kgmt])
-
-
-def parse_btrfs_fi_show(block_device):
-    proc = subprocess.Popen(('btrfs', 'fi', 'show', block_device),
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            env={"PATH": "/bin:/sbin"})
-    stdout, stderr = proc.communicate()
-    if proc.returncode != 0:
-        raise CheckBtrfsException(STATE_CRITICAL,
-                                  'Non-zero return code on btrfs fi show %s: %s\n'
-                                  'stdout: %s\nstderr: %s' %
-                                  (block_device, proc.returncode, stdout, stderr))
-
-    used = None
-    allocated = 0
-    total = 0
-
-    for line in stdout.splitlines():
-        match_used = re_used.match(line)
-        if match_used is not None:
-            used = to_bytes(float(match_used.group('used')),
-                            match_used.group('used_kmgt'))
-            continue
-        match_devid = re_devid.match(line)
-        if match_devid is not None:
-            allocated = allocated + to_bytes(float(match_devid.group('allocated')),
-                                             match_devid.group('allocated_kmgt'))
-            total = total + to_bytes(float(match_devid.group('total')),
-                                     match_devid.group('total_kmgt'))
-
-    return (total, allocated, used)
-
-
-def check_usage(total, allocated, used, args):
+def check_usage(total, allocated, used, wasted_hard, wasted_soft, args):
     warning = False
     critical = False
     msg = []
 
-    unallocated_gib = (total - allocated) / 1073741824
-    allocated_pct = (allocated * 100) / total
+    unallocated_gib = (total - allocated - wasted_hard - wasted_soft) / 1073741824
+    allocated_pct = (allocated * 100) / (total - wasted_hard - wasted_soft)
     used_pct = (used * 100) / allocated
 
     if args.allocated_critical_gib > unallocated_gib:
@@ -181,10 +134,15 @@ def check_usage(total, allocated, used, args):
         else:
             print('BTRFS OK')
 
-    print('Total size: %.2f GiB, Allocated: %.2f GiB (%s%%), Used: %.2f GiB (%s%%)'
-          % (total / 1073741824.0,
-             allocated / 1073741824.0, allocated_pct,
-             used / 1073741824.0, used_pct))
+    summary = []
+    summary.append('Total size: %.2f GiB' % (total / 1073741824.0))
+    summary.append('Allocated: %.2f GiB (%s%%)' % ((allocated / 1073741824.0), allocated_pct))
+    if (wasted_soft) > 0:
+        summary.append('Wasted: %.2f GiB (Reclaimable: %.2f GiB)' %
+                       (((wasted_hard + wasted_soft) / 1073741824.0), (wasted_soft / 1073741824.0))
+                       )
+    summary.append('Used: %.2f GiB (%s%%)' % ((used / 1073741824.0), used_pct))
+    print(', '.join(summary))
 
     if critical is True:
         return STATE_CRITICAL
@@ -196,11 +154,24 @@ def check_usage(total, allocated, used, args):
 def main():
     try:
         args = get_args()
-        (total, allocated, used) = parse_btrfs_fi_show(args.block_device)
-        sys.exit(check_usage(total, allocated, used, args))
+        usage = BtrfsUsage(args.mountpoint)
+        wasted_hard, wasted_soft = usage.get_wasted()
+        sys.exit(
+            check_usage(
+                usage.get_total(),
+                usage.get_allocated(),
+                usage.get_used(),
+                wasted_hard,
+                wasted_soft,
+                args,
+            )
+        )
     except CheckBtrfsException as cbe:
         print cbe.msg
         sys.exit(cbe.status)
+    except BtrfsUsageException as bue:
+        print bue.msg
+        sys.exit(STATE_CRITICAL)
 
 
 if __name__ == "__main__":
