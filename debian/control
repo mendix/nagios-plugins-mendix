@@ -9,5 +9,6 @@ Vcs-Git: git://github.com/mendix/nagios-plugins-mendix.git
 Package: nagios-plugins-mendix
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Suggests: python-mx-btrfs
 Description: Plugins for Nagios
  This package provides various plugins for Nagios.
