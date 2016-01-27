@@ -1,0 +1,139 @@
+#!/usr/bin/env python
+
+import os
+import glob
+import time
+import sys
+import argparse
+import psycopg2
+from psycopg2.extras import DictCursor
+
+STATE = {
+    'Ok': 0,
+    'Warning': 1,
+    'Critical': 2,
+    'Unknown': 3,
+}
+
+
+def get_args():
+    parser = argparse.ArgumentParser("Check PostgreSQL Replication")
+    parser.add_argument('-w', '--warning', type=int,
+                        help='Warning level for offset between master and slave'
+                             ' (checked on master)')
+    parser.add_argument('-c', '--critical', type=int,
+                        help='Critical level for offset between master and slave'
+                             ' (checked on master)')
+    args = parser.parse_args()
+
+    if args.critical is not None and (args.warning is None or args.warning > args.critical):
+        args.warning = args.critical
+
+    return args
+
+
+def check_replication(args, cur):
+    try:
+        cur.execute("""
+            SELECT
+                client_addr,
+                pg_xlog_location_diff(pg_stat_replication.sent_location,
+                    pg_stat_replication.replay_location) AS pg_xlog_location_diff
+            FROM pg_stat_replication
+            WHERE state = 'streaming'""")
+    except:
+        print "Critical: Unable to SELECT FROM pg_stat_replication()"
+        return STATE['Critical']
+
+    replicas = cur.fetchall()
+    if len(replicas) == 0:
+        print "Critical: No Streaming Replica's are attached"
+        return STATE['Critical']
+
+    if len(replicas) > 1:
+        print "Unknown: There are more then 1 Streaming Replica's attached. This is unsupported."
+        return STATE['Unknown']
+
+    replica = replicas[0]
+
+    state = 'Ok'
+    if args.critical is None:
+        state = 'Unknown'
+    elif replica['pg_xlog_location_diff'] > args.critical:
+        state = 'Critical'
+    elif replica['pg_xlog_location_diff'] > args.warning:
+        state = 'Warning'
+
+    print '%s: Slave %s is %s bytes behind' % (
+        state,
+        replica['client_addr'],
+        replica['pg_xlog_location_diff']
+    )
+
+    if args.critical is None:
+        print "Unknown limit: argument --critical is missing"
+
+    return STATE[state]
+
+
+def check_slave(args, cur):
+    try:
+        cur.execute("""SELECT setting FROM pg_settings WHERE name='data_directory'""")
+    except:
+        print "Unknown: Unable to SELECT data_directory FROM pg_settings"
+        return STATE['Unknown']
+    data_directory = cur.fetchone()[0]
+
+    try:
+        cur.execute("""SELECT setting::int FROM pg_settings WHERE name='archive_timeout'""")
+    except:
+        print "Unknown: Unable to SELECT archive_timeout FROM pg_settings"
+        return STATE['Unknown']
+    archive_timeout = cur.fetchone()[0]
+
+    donefiles = glob.glob('%s/*.done' % os.path.join(data_directory, 'pg_xlog/archive_status'))
+    if not donefiles:
+        print "Unknown: No .done files found in pg_xlog/archive_status"
+        return STATE['Unknown']
+    last_donefile = max(donefiles, key=os.path.getmtime)
+    donefile_basename = os.path.basename(last_donefile)
+    donefile_mtime = int(os.path.getmtime(last_donefile))
+    donefile_seconds_ago = int(time.time()) - donefile_mtime
+
+    state = 'Ok'
+    if donefile_seconds_ago > archive_timeout*3:
+        state = 'Critical'
+    if donefile_seconds_ago > archive_timeout*2:
+        state = 'Warning'
+
+    print "%s: pg_xlog/archive_status/%s was updated %ss ago" % (
+        state, donefile_basename, donefile_seconds_ago)
+    return STATE[state]
+
+
+def main():
+    args = get_args()
+    try:
+        conn = psycopg2.connect('')
+    except:
+        print "Unknown: Unable to connect to database"
+        sys.exit(STATE['Unknown'])
+    cur = conn.cursor(cursor_factory=DictCursor)
+
+    try:
+        cur.execute("""SELECT pg_is_in_recovery()""")
+    except:
+        print "Unknown: Unable to SELECT pg_is_in_recovery()"
+        return STATE['Unknown']
+    recovery = cur.fetchone()[0]
+
+    if recovery:
+        sys.exit(
+            check_slave(args, cur)
+        )
+    sys.exit(
+        check_replication(args, cur)
+    )
+
+if __name__ == "__main__":
+    main()
