@@ -96,6 +96,8 @@ Previous successful archive was at %s (%ss ago)""" % (
 state = 'Ok'
 if a['last_archived_seconds_ago'] > archive_timeout*2:
     state = 'Warning'
+if a['last_archived_seconds_ago'] > archive_timeout*3:
+    state = 'Critical'
 
 print "%s: Last WAL file %s archived at %s (%ss ago)" % (
     state,
