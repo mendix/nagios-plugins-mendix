@@ -1,3 +1,11 @@
+nagios-plugins-mendix (1.6-1) unstable; urgency=medium
+
+  * plugins: add check_postgresql_archive_command and check_postgresql_replication
+  * check_postgresql_{archive_command,replication}: process feedback from Pull Request #3
+  * debian/control: Suggest python-psycopg2
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Thu, 28 Jan 2016 17:14:39 +0100
+
 nagios-plugins-mendix (1.5-1) unstable; urgency=medium
 
   [ Jouke Waleson ]
