@@ -91,23 +91,23 @@ def check_slave(args, cur):
         return STATE['Unknown']
     archive_timeout = cur.fetchone()[0]
 
-    donefiles = glob.glob('%s/*.done' % os.path.join(data_directory, 'pg_xlog/archive_status'))
-    if not donefiles:
-        print "Unknown: No .done files found in pg_xlog/archive_status"
+    walfiles = glob.glob('%s/????????????????????????*' % os.path.join(data_directory, 'pg_xlog'))
+    if not walfiles:
+        print "Unknown: No WAL files found in pg_xlog"
         return STATE['Unknown']
-    last_donefile = max(donefiles, key=os.path.getmtime)
-    donefile_basename = os.path.basename(last_donefile)
-    donefile_mtime = int(os.path.getmtime(last_donefile))
-    donefile_seconds_ago = int(time.time()) - donefile_mtime
+    last_walfile = max(walfiles, key=os.path.getmtime)
+    walfile_basename = os.path.basename(last_walfile)
+    walfile_mtime = int(os.path.getmtime(last_walfile))
+    walfile_seconds_ago = int(time.time()) - walfile_mtime
 
     state = 'Ok'
-    if donefile_seconds_ago > archive_timeout*2:
+    if walfile_seconds_ago > archive_timeout*2:
         state = 'Warning'
-    if donefile_seconds_ago > archive_timeout*3:
+    if walfile_seconds_ago > archive_timeout*3:
         state = 'Critical'
 
-    print "%s: pg_xlog/archive_status/%s was updated %ss ago" % (
-        state, donefile_basename, donefile_seconds_ago)
+    print "%s: pg_xlog/%s was updated %ss ago" % (
+        state, walfile_basename, walfile_seconds_ago)
     return STATE[state]
 
 
