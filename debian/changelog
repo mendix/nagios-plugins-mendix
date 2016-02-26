@@ -1,3 +1,9 @@
+nagios-plugins-mendix (1.7-1) unstable; urgency=medium
+
+  * add check_md_raid
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Fri, 26 Feb 2016 10:36:41 +0100
+
 nagios-plugins-mendix (1.6.1-1) unstable; urgency=medium
 
   * check_postgresql_replication: check for the most recent updated WAL file in pg_xlog
