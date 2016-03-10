@@ -38,7 +38,9 @@ def check_master(args, cur):
             SELECT
                 client_addr,
                 pg_xlog_location_diff(pg_stat_replication.sent_location,
-                    pg_stat_replication.replay_location) AS pg_xlog_location_diff
+                    pg_stat_replication.replay_location) AS replay_location_diff,
+                pg_xlog_location_diff(pg_stat_replication.sent_location,
+                    pg_stat_replication.flush_location) AS flush_location_diff
             FROM pg_stat_replication
             WHERE state = 'streaming'""")
     except:
@@ -59,15 +61,16 @@ def check_master(args, cur):
     state = 'Ok'
     if args.critical is None:
         state = 'Unknown'
-    elif replica['pg_xlog_location_diff'] > args.critical:
+    elif replica['flush_location_diff'] > args.critical:
         state = 'Critical'
-    elif replica['pg_xlog_location_diff'] > args.warning:
+    elif replica['flush_location_diff'] > args.warning:
         state = 'Warning'
 
-    print '%s: Slave %s is %s bytes behind' % (
+    print '%s: Slave %s should still receive %s bytes and replay %s bytes' % (
         state,
         replica['client_addr'],
-        replica['pg_xlog_location_diff']
+        replica['flush_location_diff'],
+        replica['replay_location_diff'],
     )
 
     if args.critical is None:
