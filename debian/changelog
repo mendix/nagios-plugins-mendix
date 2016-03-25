@@ -1,3 +1,9 @@
+nagios-plugins-mendix (1.9-1) unstable; urgency=medium
+
+  * check_btrfs: remove used checks
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Fri, 25 Mar 2016 14:25:30 +0100
+
 nagios-plugins-mendix (1.8-1) unstable; urgency=medium
 
   * postgresql_replication: use flush_location to check replication status on the master
