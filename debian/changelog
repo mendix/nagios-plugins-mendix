@@ -1,3 +1,9 @@
+nagios-plugins-mendix (2-1) unstable; urgency=medium
+
+  * Remove btrfs check, it moved to its own package
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Wed, 29 Jun 2016 18:31:45 +0200
+
 nagios-plugins-mendix (1.9-1) unstable; urgency=medium
 
   * check_btrfs: remove used checks
