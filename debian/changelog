@@ -1,3 +1,9 @@
+nagios-plugins-mendix (3.1-1) unstable; urgency=medium
+
+  * check_keystore_health: respond with UNKNOWN when no json is returned
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Thu, 28 Jul 2016 11:04:54 +0200
+
 nagios-plugins-mendix (3-1) unstable; urgency=medium
 
   * add keystore health check
