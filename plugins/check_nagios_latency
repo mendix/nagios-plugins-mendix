@@ -1,0 +1,78 @@
+#!/bin/sh
+
+# Path to nagiostats
+NAGIOSTATS="/usr/sbin/nagios3stats"
+
+PROGNAME=`basename $0`
+
+#functions
+function print_usage() {
+  echo "Usage: $PROGNAME [ -w <integer> ] [ -c <integer> ]"
+  echo "e.g. $PROGNAME -w 200 -c 250 "
+  echo ""
+}
+
+function print_help() {
+  echo ""
+  print_usage
+  echo " -w : Warning level for latency in seconds (default: 120 seconds)"
+  echo " -c : Critical level for latency in seconds (default: 180 seconds)"
+  echo ""
+  echo "This plugin checks Nagios' Active Servicecheck Latency."
+  echo ""
+  exit 0
+}
+
+function test_integer() {
+  LABEL=$1 
+  VALUE=$2
+  
+  if ! echo $VALUE | grep -qE '^[0-9]+(\.[0-9]+)?$' ; then
+     OUTPUT="$LABEL has no integer value ($VALUE)! Please correct this parameter"
+     EXITCODE=3
+  fi
+  
+}
+
+#defaults
+EXITCODE=0
+WARNING=120 # Warning at 2 minutes
+CRITICAL=180 # Critical at 3 minutes
+
+if [ ! -x $NAGIOSTATS ]; then
+  OUTPUT="Please correct path to nagiostats ($NAGIOSTATS)"
+  EXITCODE=3
+fi
+
+#get args
+args=`getopt hw:c: $*`
+set -- $args
+for i
+do
+  case "$i" in
+    -c) CRITICAL=$2;shift;shift;;
+    -w) WARNING=$2;shift;shift;;
+    -h) print_help
+  esac
+done
+
+test_integer "-c" $CRITICAL
+test_integer "-w" $WARNING
+
+if [ $EXITCODE -eq 0 ]; then
+  LATENCY=`$NAGIOSTATS  | awk '/Active Service Latency/ {print $8}' `
+  LATENCY_INT=`echo $LATENCY | cut -f1 -d"." `
+  if [ $LATENCY_INT -ge $CRITICAL ]; then
+    OUTPUT="CRITICAL: Latency at $LATENCY seconds! | latency=$LATENCY;$WARNING;$CRITICAL"
+    EXITCODE=2
+  else if [ $LATENCY_INT -ge $WARNING ]; then
+    OUTPUT="WARNING: Latency at $LATENCY seconds! | latency=$LATENCY;$WARNING;$CRITICAL"
+    EXITCODE=1
+  else
+    OUTPUT="OK: Latency at $LATENCY seconds. | latency=$LATENCY;$WARNING;$CRITICAL"
+  fi fi 
+fi
+
+echo $OUTPUT
+exit $EXITCODE
+
