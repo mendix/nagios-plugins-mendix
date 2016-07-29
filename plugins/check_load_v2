@@ -1,0 +1,29 @@
+#!/usr/bin/python
+import os
+import sys
+
+
+STATE_OK = 0
+STATE_WARNING = 1
+STATE_CRITICAL = 2
+STATE_UNKNOWN = 3
+
+
+def result(state, load):
+    print('system load: %.2f' % load)
+    sys.exit(state)
+
+
+if __name__ == '__main__':
+    load = os.getloadavg()  # tuple of 15, 5, 1 minute load avg
+
+    if max(load) - min(load) < 0.5:
+        if min(load) > 4:
+            result(STATE_CRITICAL, load[0])
+        elif min(load) > 2:
+            result(STATE_WARNING, load[0])
+        else:
+            result(STATE_OK, load[0])
+    else:
+        print('unable to get a reliable reading')
+        result(STATE_OK, load[0])
