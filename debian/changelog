@@ -1,3 +1,9 @@
+nagios-plugins-mendix (3.5-1) unstable; urgency=medium
+
+  * check_load_v3: single line output looks good in nagios
+
+ -- Daniel van Dorp <daniel.van.dorp@mendix.com>  Fri, 29 Jul 2016 17:12:55 +0200
+
 nagios-plugins-mendix (3.4-1) unstable; urgency=medium
 
   * add check_load_v3
