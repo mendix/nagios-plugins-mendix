@@ -1,0 +1,54 @@
+#!/usr/bin/python
+import os
+import sys
+import multiprocessing
+import argparse
+
+
+STATE_OK = 0
+STATE_WARNING = 1
+STATE_CRITICAL = 2
+STATE_UNKNOWN = 3
+
+
+def result(state, label, load):
+    print('System load: %s %s' % (label, str(load)))
+    sys.exit(state)
+
+
+def stable(load, deviation):
+    avg = sum(load) / len(load)
+    absolute = map(lambda x: abs(x - avg), load)
+    adheres_deviation = map(lambda x: avg != 0 and x / avg <= deviation, absolute)
+    return all(adheres_deviation)
+
+
+def determine_state(load, warning, critical):
+    cores = multiprocessing.cpu_count()
+    critical_threshold = cores * critical
+    warning_threshold = cores * warning
+    if min(load) >= critical_threshold:
+        return STATE_CRITICAL, "CRITICAL"
+    elif min(load) >= warning_threshold:
+        return STATE_WARNING, "WARNING"
+    else:
+        return STATE_OK, "OK"
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-w", "--warning", help="Warning level, default = 0.7",
+                        type=float, default=0.7)
+    parser.add_argument("-c", "--critical", help="Critical level, default = 1.5",
+                        type=float, default=1.5)
+    parser.add_argument("-d", "--deviation", help="Deviation ratio, default = 0.2",
+                        type=float, default=0.2)
+    args = parser.parse_args()
+
+    load = os.getloadavg()  # tuple of 15, 5, 1 minute load avg
+    if stable(load, deviation=args.deviation):
+        state, label = determine_state(load, warning=args.warning, critical=args.critical)
+        result(state, label, load)
+    else:
+        print('Unable to get a reliable reading')
+        result(STATE_OK, "OK", load)
