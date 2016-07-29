@@ -1,3 +1,9 @@
+nagios-plugins-mendix (3.4-1) unstable; urgency=medium
+
+  * add check_load_v3
+
+ -- Xiwen Cheng <xiwen.cheng@mendix.com>  Fri, 29 Jul 2016 12:58:16 +0000
+
 nagios-plugins-mendix (3.3-1) unstable; urgency=medium
 
   * keystore_health: fix url /health -> /keystore/health
