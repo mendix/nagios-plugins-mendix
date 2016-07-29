@@ -50,5 +50,4 @@ if __name__ == '__main__':
         state, label = determine_state(load, warning=args.warning, critical=args.critical)
         result(state, label, load)
     else:
-        print('Unable to get a reliable reading')
-        result(STATE_OK, "OK", load)
+        result(STATE_OK, "HEALTHY", load)
