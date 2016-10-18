@@ -1,3 +1,9 @@
+nagios-plugins-mendix (3.6-1) unstable; urgency=medium
+
+  * keystore_health: use the /find api
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Tue, 18 Oct 2016 14:38:30 +0200
+
 nagios-plugins-mendix (3.5-1) unstable; urgency=medium
 
   * check_load_v3: single line output looks good in nagios
