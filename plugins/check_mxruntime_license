@@ -13,8 +13,6 @@ stderrlog.setFormatter(consolelogformatter)
 logger.addHandler(stderrlog)
 
 m2 = m2ee.M2EE()
-state, message, loglines = m2ee.nagios.check_critical_logs(m2.client)
+state, message = m2ee.nagios.check_license(m2.client)
 print(message)
-if loglines is not None:
-    print('\n'.join(loglines))
 sys.exit(state)
