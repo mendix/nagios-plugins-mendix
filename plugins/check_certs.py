@@ -92,6 +92,9 @@ for config_line in config_lines:
 
 
 for fname in files:
+    # skip revocation certs
+    if fname.endswith("crl.pem") or fname.endswith("revoke-test.pem"):
+        continue
     # skip al non crt and pem files
     if fname.endswith(".crt") or fname.endswith(".pem"):
         pass
