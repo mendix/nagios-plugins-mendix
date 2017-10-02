@@ -54,23 +54,20 @@ do
     i=$((i+1))
 
     if [ $location -eq 1 ]; then # 301 received already https should return 200.
-        if [ $httpheader = "HTTP/1.1 200 OK" ]; then
+        if echo $httpheader | egrep -q "^HTTP/(1.1|2) 200"; then
             echo "HTTP return code is 301 and HTTPS return code is 200"
             exit 0
-        elif [ $httpheader = "HTTP/1.1 503 Service Temporarily Unavailable" ] ; then
+        elif echo $httpheader | egrep -q "^HTTP/(1.1|2) 503"; then
             echo "HTTP return code is 301 and HTTPS return code is 503 because the application is offline"
             exit 0
-        elif [ $httpheader = "HTTP/1.1 403 Forbidden" ] ; then
+        elif echo $httpheader | egrep -q "^HTTP/(1.1|2) 403"; then
             echo "HTTP return code is 301 and HTTPS return code is 403 because access to this application is restricted"
-            exit 0
-        elif [ $httpheader = "HTTP/1.1 503 Service Unavailable" ] ; then
-            echo "HTTP return code is 301 and HTTPS return code is 503 because the application is offline"
             exit 0
         fi
     fi
 
     if [ $i -eq 1 ]; then
-        if [ "$httpheader" = "HTTP/1.1 301 Moved Permanently" ]; then # The first HTTP header.
+        if echo $httpheader | egrep -q "^HTTP/(1.1|2) 301"; then # The first HTTP header.
             continue
         else
             echo "HTTP return code is not 301 but '$httpheader'."
