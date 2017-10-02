@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # This script check if http returns 301 to the
 # https location and the https location returns
@@ -23,7 +23,7 @@
 
 url=$1
 
-function print_usage()
+print_usage()
 {
     echo `basename $0` example.mendix.com
 }
@@ -39,7 +39,8 @@ if [ $? -ne 0 ]; then
     exit 3; # UNKNOWN
 fi
 
-IFS=$'\n' # Internal Field Separator: only newline, no tab or space
+IFS='
+' # Internal Field Separator: only newline, no tab or space
 # -s Silent or quiet mode. Don't show progress meter or error messages.
 # -I Fetch the HTTP-header only.
 # -L If the server reports 301, follow this 301 to the new location.
@@ -50,7 +51,7 @@ location=0
 
 for httpheader in $curl
 do
-    let i++
+    i=$((i+1))
 
     if [ $location -eq 1 ]; then # 301 received already https should return 200.
         if [ $httpheader = "HTTP/1.1 200 OK" ]; then
