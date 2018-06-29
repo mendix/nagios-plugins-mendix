@@ -1,0 +1,70 @@
+#!/usr/bin/python3
+
+import requests
+import sys
+import time
+
+STATE_OK = 0
+STATE_WARNING = 1
+STATE_CRITICAL = 2
+STATE_UNKNOWN = 3
+
+state_str_map = {
+    STATE_OK: "OK",
+    STATE_WARNING: "WARNING",
+    STATE_CRITICAL: "CRITICAL",
+    STATE_UNKNOWN: "UNKNOWN",
+}
+
+state = STATE_OK
+state_label = "OK"
+message = ""
+
+svnbot_has_failures = STATE_OK
+svnbot_has_failures_message = "No svnbot auth request failures."
+jwks_cache_stale = STATE_OK
+jwks_cache_stale_message = ""
+
+nginx_stats_http_port = sys.argv[1]
+svnbot_http_port = sys.argv[2]
+
+# First thing we want to know is if svnbot is borking and cannot process
+# requests.
+try:
+    nginx_stats_url = 'http://localhost:{}/auth/stats'.format(nginx_stats_http_port)
+    nr_failures = requests.get(nginx_stats_url).json()['svnbot_auth_request_fail']
+    if nr_failures != 0:
+        svnbot_has_failures = STATE_CRITICAL
+        svnbot_has_failures_message = "{} svnbot auth request failures.".format(nr_failures)
+except Exception as e:
+    svnbot_has_failures = STATE_UNKNOWN
+    svnbot_has_failures_message = "Unable to fetch svnbot request stats: {}.".format(e)
+
+# Also, check if the public signing keys from MxID3 are refreshed periodically.
+# The statistics endpoint in svnbot gives us the modification time of the cache
+# file. So, again we check if svnbot can handle requests, even if it didn't get
+# auth requests from nginx.
+try:
+    svnbot_stats_url = 'http://localhost:{}/stats/'.format(svnbot_http_port)
+    mxid3_jwks_refreshed_at = requests.get(svnbot_stats_url).json()['mxid3_jwks_refreshed_at']
+    mxid3_jwks_refreshed_sec_ago = int(time.time()) - mxid3_jwks_refreshed_at
+    if mxid3_jwks_refreshed_sec_ago > 1.1 * 86400:
+        jwks_cache_stale = STATE_WARNING
+    elif mxid3_jwks_refreshed_sec_ago > 2.2 * 86400:
+        jwks_cache_stale = STATE_CRITICAL
+    jwks_cache_stale_message = "MxID3 keys last refreshed {} sec ago.".format(
+            mxid3_jwks_refreshed_sec_ago)
+except Exception as e:
+    jwks_cache_stale = STATE_UNKNOWN
+    jwks_cache_stale_message = "Unable to check mxid3 jwks cache: {}.".format(e)
+
+exitcode = STATE_OK
+for state in STATE_UNKNOWN, STATE_WARNING, STATE_CRITICAL:
+    if svnbot_has_failures == state or jwks_cache_stale == state:
+        exitcode = state
+
+print("{} - {} {}".format(state_str_map[exitcode],
+                          svnbot_has_failures_message,
+                          jwks_cache_stale_message))
+
+exit(exitcode)
