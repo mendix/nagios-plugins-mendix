@@ -1,3 +1,12 @@
+nagios-plugins-mendix (6-1) jessie; urgency=medium
+
+  [ Daniel van Dorp ]
+  * check_webserver: remove bashisms
+  * check_webserver: improve usage message
+  * check_webserver: add support for HTTP/2
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Wed, 18 Jul 2018 17:43:07 +0200
+
 nagios-plugins-mendix (5-1) unstable; urgency=medium
 
   * check_mxruntime_*: adapt to new m2ee-tools
