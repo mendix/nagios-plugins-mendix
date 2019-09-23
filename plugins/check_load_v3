@@ -45,7 +45,7 @@ if __name__ == '__main__':
                         type=float, default=0.2)
     args = parser.parse_args()
 
-    load = os.getloadavg()  # tuple of 15, 5, 1 minute load avg
+    load = os.getloadavg()  # tuple of 1, 5, 15 minute load avg
     if stable(load, deviation=args.deviation):
         state, label = determine_state(load, warning=args.warning, critical=args.critical)
         result(state, label, load)
