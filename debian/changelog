@@ -1,3 +1,10 @@
+nagios-plugins-mendix (6.1-1) jessie; urgency=medium
+
+  * check_free_memory: make it work on Stretch and up
+  * check_load_v3: fix 1,5,15 min load avg comment
+
+ -- Igor Yurchenko <igor.yurchenko@mendix.com>  Mon, 23 Sep 2019 12:05:34 +0000
+
 nagios-plugins-mendix (6-1) jessie; urgency=medium
 
   [ Daniel van Dorp ]
