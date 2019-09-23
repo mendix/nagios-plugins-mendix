@@ -26,7 +26,7 @@ while getopts ":w:c:m:" opt; do
         critical=$OPTARG
         ;;
     m)
-        FREE_MEM=$OPTARG
+        freemb=$OPTARG
         ;;
     \?)
         usage
@@ -39,24 +39,34 @@ while getopts ":w:c:m:" opt; do
     esac
 done
 
-if [ -z "$FREE_MEM" ]; then
-    FREE_MEM=$(free -tm | grep "buffers/cache" | awk '{print $4}')
+if [ -z "$freemb" ]; then
+    freekbavail=$(cat /proc/meminfo |grep MemAvailable | awk '{ print $2 }')
+    if [ -n "$freekbavail" ]; then
+        freembavail=$((freekbavail / 1024))
+        freekbswap=$(cat /proc/meminfo |grep 'SwapFree' | awk '{ print $2 }')
+        freembswap=$((freekbswap / 1024))
+        freemb=$((freembavail + freembswap))
+    else
+        freembbuf=$(free -m | grep buffers/cache | awk '{ print $4 }')
+        freembswap=$(free -m | grep Swap | awk '{ print $4 }')
+        freemb=$((freembbuf + freembswap))
+    fi
 fi
 
-MSG="${FREE_MEM}MB RAM free (warning=$warning, critical=$critical)"
+MSG="${freemb}MB RAM free (warning=$warning, critical=$critical)"
 
 INT_REGEX='^[0-9]+$'
-if ! [[ $FREE_MEM =~ $INT_REGEX ]]; then
+if ! [[ $freemb =~ $INT_REGEX ]]; then
     echo "UNKNOWN: $MSG"
     exit $STATE_UNKNOWN
 fi
 
-if [ "$FREE_MEM" -le "$critical" ]; then
+if [ "$freemb" -le "$critical" ]; then
     echo "CRITICAL: $MSG"
     exit $STATE_CRITICAL
 fi
 
-if [ "$FREE_MEM" -le "$warning" ]; then
+if [ "$freemb" -le "$warning" ]; then
     echo "WARNING: $MSG"
     exit $STATE_WARNING
 fi
