@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+host_jid=$1
+service_feature=$2
+
+curl \
+        --silent \
+        --show-error \
+        --fail \
+        "http://localhost:1337/check_feature?target=$host_jid&feature=$service_feature" \
+    || exit 2
