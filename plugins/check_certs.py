@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 #
 # Plugin to check for Certificates that will be expiring soon, or has expired (BAD!)
 # It reads the configuration file at '/etc/certs.cfg' (standard). Each line is the
@@ -53,13 +53,13 @@ options.critical = int(options.critical)
 fileExists = os.path.exists(options.filename)
 
 if(fileExists is False):
-    print "Error: File %s doesn't exist!" % options.filename
+    print("Error: File %s doesn't exist!" % options.filename)
     exit(STATE_UNKNOWN)
 
 try:
     infile = open(options.filename, "r")
-except IOError, e:
-    print "Error - %s" % e
+except IOError as e:
+    print("Error - %s" % e)
     exit(STATE_UNKNOWN)
 
 config_lines = infile.readlines()
@@ -81,6 +81,7 @@ def expand_file_list(path):
     elif os.path.isdir(path):
         my_files = [os.path.join(path, i) for i in os.listdir(path)]
     return my_files
+
 
 for config_line in config_lines:
     name = config_line.strip()
@@ -104,7 +105,7 @@ for fname in files:
     files_count = files_count + 1
     try:
         buffer = open(fname, 'r').read()
-    except IOError, e:
+    except IOError:
         critical_count = critical_count + 1
         summary.append({'days': -1, 'status': "[CRIT]", 'fname': fname, 'cn': 'MISSING'})
         continue

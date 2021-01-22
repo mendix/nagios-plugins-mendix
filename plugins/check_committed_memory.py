@@ -1,24 +1,24 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # Overcommitting memory is bad! Keep an eye on it.
 # Author: Xiwen Cheng <xiwen.cheng@mendix.com>
 
 import re
-import getopt
 from optparse import OptionParser
 
 default_opts = {'warning': 90, 'critical': 100}
 source = "/proc/meminfo"
 regex_line = (re.compile(r'^(?P<key>\S+):\s+(?P<value>\S+)'))
 
-STATE_OK=0
-STATE_WARNING=1
-STATE_CRITICAL=2
-STATE_UNKNOWN=3
+STATE_OK = 0
+STATE_WARNING = 1
+STATE_CRITICAL = 2
+STATE_UNKNOWN = 3
 
 # parse arguments
 parser = OptionParser()
 parser.add_option("-w", "--warning", dest="warning", help="Warning threshold committed percentage")
-parser.add_option("-c", "--critical", dest="critical", help="Critical threshold committed percentage")
+parser.add_option("-c", "--critical", dest="critical",
+                  help="Critical threshold committed percentage")
 (options, args) = parser.parse_args()
 
 
@@ -35,8 +35,8 @@ options.critical = int(options.critical)
 
 try:
     infile = open(source, "r")
-except IOError, e:
-    print "Error - %s" % e
+except IOError as e:
+    print("Error - %s" % e)
     exit(STATE_UNKNOWN)
 
 lines = infile.readlines()
@@ -65,8 +65,8 @@ else:
     state = STATE_OK
     state_label = "OK"
 
-print "%s - Memory committed: %d kB of %d kB (%d%%)" % (state_label, committed, total, percent)
-print "Thresholds: warn = %d%%, crit = %d%%" % (options.warning, options.critical)
+print("%s - Memory committed: %d kB of %d kB (%d%%)" % (state_label, committed, total, percent))
+print("Thresholds: warn = %d%%, crit = %d%%" % (options.warning, options.critical))
 exit(state)
 
 # vim:sw=4:ts=4:expandtab
