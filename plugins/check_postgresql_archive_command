@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 import sys
 import psycopg2
@@ -13,46 +13,46 @@ STATE = {
 
 try:
     conn = psycopg2.connect('')
-except:
-    print "Unknown: Unable to connect to database"
+except Exception:
+    print("Unknown: Unable to connect to database")
     sys.exit(STATE['Unknown'])
 cur = conn.cursor(cursor_factory=DictCursor)
 
 try:
     cur.execute("""SELECT pg_is_in_recovery()""")
-except:
-    print "Unknown: Unable to SELECT pg_is_in_recovery()"
+except Exception:
+    print("Unknown: Unable to SELECT pg_is_in_recovery()")
     sys.exit(STATE['Unknown'])
 recovery = cur.fetchone()[0]
 
 try:
     cur.execute("""SELECT setting FROM pg_settings WHERE name='archive_mode'""")
-except:
-    print "Unknown: Unable to SELECT archive_mode FROM pg_settings"
+except Exception:
+    print("Unknown: Unable to SELECT archive_mode FROM pg_settings")
     sys.exit(STATE['Unknown'])
 archive_mode = cur.fetchone()[0]
 
 try:
     cur.execute("""SELECT setting FROM pg_settings WHERE name='archive_command'""")
-except:
-    print "Unknown: Unable to SELECT archive_command FROM pg_settings"
+except Exception:
+    print("Unknown: Unable to SELECT archive_command FROM pg_settings")
     sys.exit(STATE['Unknown'])
 archive_command = cur.fetchone()[0]
 
 if archive_mode == 'off':
-    print "Warning: archive_mode disabled"
+    print("Warning: archive_mode disabled")
     sys.exit(STATE['Warning'])
 if archive_mode != 'off' and archive_command == '':
-    print "Warning: archive_mode enabled, yet archive_command is not set"
+    print("Warning: archive_mode enabled, yet archive_command is not set")
     sys.exit(STATE['Warning'])
 if archive_mode == 'on' and recovery:
-    print "Ok: I'm a slave, archive_mode != always, so not supposed to be archiving"
+    print("Ok: I'm a slave, archive_mode != always, so not supposed to be archiving")
     sys.exit(STATE['Ok'])
 
 try:
     cur.execute("""SELECT setting::int FROM pg_settings WHERE name='archive_timeout'""")
-except:
-    print "Unknown: Unable to SELECT archive_timeout FROM pg_settings"
+except Exception:
+    print("Unknown: Unable to SELECT archive_timeout FROM pg_settings")
     sys.exit(STATE['Unknown'])
 archive_timeout = cur.fetchone()[0]
 
@@ -67,13 +67,13 @@ try:
             extract('epoch' FROM now()-last_failed_time)::int AS last_failed_seconds_ago,
             last_failed_wal IS NOT NULL AND last_failed_wal > last_archived_wal AS failure_state
         FROM pg_stat_archiver""")
-except:
-    print "Critical: Unable to SELECT FROM pg_stat_archiver()"
+except Exception:
+    print("Critical: Unable to SELECT FROM pg_stat_archiver()")
     sys.exit(STATE['Critical'])
 a = cur.fetchone()
 
 if a['last_archived_wal'] is None or a['last_archived_time'] is None:
-    print "Unknown: Last time a WAL file was archived is unknown"
+    print("Unknown: Last time a WAL file was archived is unknown")
     sys.exit(STATE['Unknown'])
 
 if a['failure_state']:
@@ -81,7 +81,7 @@ if a['failure_state']:
     if a['last_archived_seconds_ago'] > archive_timeout*3:
         state = 'Critical'
 
-    print """%s: Failed to archive WAL file %s
+    print("""%s: Failed to archive WAL file %s
 Last try at %s (%ss ago)
 Previous successful archive was at %s (%ss ago)""" % (
         state,
@@ -90,7 +90,7 @@ Previous successful archive was at %s (%ss ago)""" % (
         a['last_failed_seconds_ago'],
         a['last_archived_time'].strftime('%Y-%m-%d %H:%M:%S%z'),
         a['last_archived_seconds_ago']
-    )
+    ))
     sys.exit(STATE[state])
 
 state = 'Ok'
@@ -99,10 +99,10 @@ if a['last_archived_seconds_ago'] > archive_timeout*2:
 if a['last_archived_seconds_ago'] > archive_timeout*3:
     state = 'Critical'
 
-print "%s: Last WAL file %s archived at %s (%ss ago)" % (
+print("%s: Last WAL file %s archived at %s (%ss ago)" % (
     state,
     a['last_archived_wal'],
     a['last_archived_time'].strftime('%Y-%m-%d %H:%M:%S%z'),
     a['last_archived_seconds_ago']
-)
+))
 sys.exit(STATE[state])
