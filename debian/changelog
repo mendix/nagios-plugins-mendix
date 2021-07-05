@@ -1,3 +1,13 @@
+nagios-plugins-mendix (7-1) unstable; urgency=medium
+
+  * Convert all python plugins to Python 3
+  * d/control: bump debhelper compatibility version
+  * debian/control: bump standards version to 4.5.1.0
+  * debian/control: remove Suggests
+  * debian/gbp.conf: update after renaming this branch<Paste>
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 05 Jul 2021 16:31:57 +0200
+
 nagios-plugins-mendix (6.1-1) jessie; urgency=medium
 
   * check_free_memory: make it work on Stretch and up
