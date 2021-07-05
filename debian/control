@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Pim van den Berg <pim.van.den.berg@mendix.com>
 Build-Depends: debhelper-compat (= 12)
-Standards-Version: 3.9.3
+Standards-Version: 4.5.1.0
 Vcs-Git: git://github.com/mendix/nagios-plugins-mendix.git
 
 Package: nagios-plugins-mendix
