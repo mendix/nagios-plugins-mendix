@@ -1,3 +1,9 @@
+nagios-plugins-mendix (8-1) unstable; urgency=medium
+
+  * Add copy of check_raid with cciss fixes
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Thu, 05 Aug 2021 15:19:26 +0200
+
 nagios-plugins-mendix (7-1) unstable; urgency=medium
 
   * Convert all python plugins to Python 3
