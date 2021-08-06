@@ -122,7 +122,7 @@ for fname in files:
 
         mykey = crypto.load_certificate(crypto.FILETYPE_PEM, mybuf)
         cn = mykey.get_subject().commonName
-        notafter = datetime.strptime(mykey.get_notAfter(), "%Y%m%d%H%M%SZ")
+        notafter = datetime.strptime(mykey.get_notAfter().decode(), "%Y%m%d%H%M%SZ")
         diff = notafter - today
         days = diff.days
         if days <= options.critical:
