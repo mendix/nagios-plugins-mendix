@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Path to nagiostats
-NAGIOSTATS="/usr/sbin/nagios3stats"
-
 PROGNAME=`basename $0`
 
 #functions
@@ -39,8 +36,16 @@ EXITCODE=0
 WARNING=120 # Warning at 2 minutes
 CRITICAL=180 # Critical at 3 minutes
 
+# Path to nagiosstats
+NAGIOSSTATS3="/usr/sbin/nagios3stats"
+NAGIOSSTATS4="/usr/sbin/nagios4stats"
+NAGIOSSTATS=$NAGIOSSTATS3
+if [ -x $NAGIOSSTATS4 ]; then
+  NAGIOSSTATS=$NAGIOSSTATS4
+fi
+
 if [ ! -x $NAGIOSSTATS ]; then
-  OUTPUT="Please correct path to nagiostats ($NAGIOSSTATS)"
+  OUTPUT="Please correct path to nagiosstats ($NAGIOSSTATS)"
   EXITCODE=3
 fi
 
